@@ -6,7 +6,7 @@ using namespace TinyProcessLib;
 
 int main() {
   bool stdout_error=false;
-  for(size_t c=0;c<10000;c++) {
+  for(size_t c=0;c<4000;c++) {
     Process process("echo Hello World "+to_string(c), "", [&stdout_error, c](const char *bytes, size_t n) {
       if(string(bytes, n)!="Hello World "+to_string(c)+"\n")
         stdout_error=true;

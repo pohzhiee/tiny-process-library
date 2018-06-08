@@ -12,7 +12,7 @@ int main() {
   vector<thread> threads;
   for(size_t ct=0;ct<4;ct++) {
     threads.emplace_back([&stdout_error, &exit_status_error, ct]() {
-      for(size_t c=0;c<2500;c++) {
+      for(size_t c=0;c<1000;c++) {
         Process process("echo Hello World "+to_string(c)+" "+to_string(ct), "", [&stdout_error, ct, c](const char *bytes, size_t n) {
           if(string(bytes, n)!="Hello World "+to_string(c)+" "+to_string(ct)+"\n")
             stdout_error=true;
