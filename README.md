@@ -1,7 +1,7 @@
 # tiny-process-library [![Build Status](https://gitlab.com/eidheim/tiny-process-library/badges/master/build.svg)](https://gitlab.com/eidheim/tiny-process-library/pipelines)
 A small platform independent library making it simple to create and stop new processes in C++, as well as writing to stdin and reading from stdout and stderr of a new process.
 
-This library was created for, and is used by the C++ IDE project [juCi++](https://github.com/cppit/jucipp).
+This library was created for, and is used by the C++ IDE project [juCi++](https://gitlab.com/cppit/jucipp).
 
 ### Features
 * No external dependencies
