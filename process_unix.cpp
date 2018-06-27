@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdexcept>
+#include <vector>
 
 namespace TinyProcessLib {
 
@@ -24,9 +25,9 @@ Process::id_type Process::open(std::function<void()> function) noexcept {
     stdout_fd=std::unique_ptr<fd_type>(new fd_type);
   if(read_stderr)
     stderr_fd=std::unique_ptr<fd_type>(new fd_type);
-  
+
   int stdin_p[2], stdout_p[2], stderr_p[2];
-  
+
   if(stdin_fd && pipe(stdin_p)!=0)
     return -1;
   if(stdout_fd && pipe(stdout_p)!=0) {
@@ -38,9 +39,9 @@ Process::id_type Process::open(std::function<void()> function) noexcept {
     if(stdout_fd) {close(stdout_p[0]);close(stdout_p[1]);}
     return -1;
   }
-  
+
   id_type pid = fork();
-  
+
   if (pid < 0) {
     if(stdin_fd) {close(stdin_p[0]);close(stdin_p[1]);}
     if(stdout_fd) {close(stdout_p[0]);close(stdout_p[1]);}
@@ -54,38 +55,38 @@ Process::id_type Process::open(std::function<void()> function) noexcept {
     if(stdin_fd) {close(stdin_p[0]);close(stdin_p[1]);}
     if(stdout_fd) {close(stdout_p[0]);close(stdout_p[1]);}
     if(stderr_fd) {close(stderr_p[0]);close(stderr_p[1]);}
-  
+
     //Based on http://stackoverflow.com/a/899533/3808293
     int fd_max=static_cast<int>(sysconf(_SC_OPEN_MAX)); // truncation is safe
     for(int fd=3;fd<fd_max;fd++)
       close(fd);
-  
+
     setpgid(0, 0);
     //TODO: See here on how to emulate tty for colors: http://stackoverflow.com/questions/1401002/trick-an-application-into-thinking-its-stdin-is-interactive-not-a-pipe
     //TODO: One solution is: echo "command;exit"|script -q /dev/null
-    
+
     if(function)
       function();
-    
+
     _exit(EXIT_FAILURE);
   }
-  
+
   if(stdin_fd) close(stdin_p[0]);
   if(stdout_fd) close(stdout_p[1]);
   if(stderr_fd) close(stderr_p[1]);
-  
+
   if(stdin_fd) *stdin_fd = stdin_p[1];
   if(stdout_fd) *stdout_fd = stdout_p[0];
   if(stderr_fd) *stderr_fd = stderr_p[0];
-  
+
   closed=false;
   data.id=pid;
   return pid;
 }
 
-Process::id_type Process::open(const std::string &command, const std::string &path) noexcept {
-  return open([&command, &path] {
-    if(!path.empty()) {
+Process::id_type Process::open(const std::string &command, const std::string &path, const OptionalWrapper <environment_container_type>& environment) noexcept {
+  return open([&command, &path, &environment] {
+    auto escaped_path = [&path](){
       auto path_escaped=path;
       size_t pos=0;
       //Based on https://www.reddit.com/r/cpp/comments/3vpjqg/a_new_platform_independent_process_library_for_c11/cxsxyb7
@@ -93,10 +94,31 @@ Process::id_type Process::open(const std::string &command, const std::string &pa
         path_escaped.replace(pos, 1, "'\\''");
         pos+=4;
       }
-      execl("/bin/sh", "sh", "-c", ("cd '"+path_escaped+"' && "+command).c_str(), NULL);
+      return path_escaped;
+    };
+
+    if (!environment) {
+      if (!path.empty())
+        execl("/bin/sh", "sh", "-c", ("cd '"+escaped_path()+"' && "+command).c_str(), NULL);
+      else
+        execl("/bin/sh", "sh", "-c", command.c_str(), NULL);
+    } else {
+      // improveable?
+      std::vector <std::string> concatenated;
+      std::vector <char const*> pointer_store;
+
+      concatenated.reserve(environment.get().size());
+      for (auto const& var : environment.get()) {
+        concatenated.push_back(var.first + "=" + var.second);
+        pointer_store.push_back(concatenated.back().c_str());
+      }
+      pointer_store.push_back((char const*)nullptr);
+
+      if (!path.empty())
+        execle("/bin/sh", "sh", "-c", ("cd '"+escaped_path()+"' && "+command).c_str(), (char*)nullptr, &pointer_store.front());
+      else
+        execle("/bin/sh", "sh", "-c", command.c_str(), (char*)nullptr, &pointer_store.front());
     }
-    else
-      execl("/bin/sh", "sh", "-c", command.c_str(), NULL);
   });
 }
 
@@ -164,7 +186,7 @@ void Process::close_fds() noexcept {
     stdout_thread.join();
   if(stderr_thread.joinable())
     stderr_thread.join();
-  
+
   if(stdin_fd)
     close_stdin();
   if(stdout_fd) {
