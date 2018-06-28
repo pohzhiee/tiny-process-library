@@ -3,13 +3,12 @@
 #include <unistd.h>
 #include <signal.h>
 #include <stdexcept>
-#include <vector>
 
 namespace TinyProcessLib {
 
 Process::Data::Data() noexcept : id(-1) {}
 
-Process::Process(std::function<void()> function,
+Process::Process(const std::function<void()> &function,
                  std::function<void (const char *, size_t)> read_stdout,
                  std::function<void (const char *, size_t)> read_stderr,
                  bool open_stdin, size_t buffer_size) noexcept :
@@ -18,7 +17,7 @@ Process::Process(std::function<void()> function,
   async_read();
 }
 
-Process::id_type Process::open(std::function<void()> function) noexcept {
+Process::id_type Process::open(const std::function<void()> &function) noexcept {
   if(open_stdin)
     stdin_fd=std::unique_ptr<fd_type>(new fd_type);
   if(read_stdout)
@@ -84,40 +83,39 @@ Process::id_type Process::open(std::function<void()> function) noexcept {
   return pid;
 }
 
-Process::id_type Process::open(const std::string &command, const std::string &path, const OptionalWrapper <environment_container_type>& environment) noexcept {
+Process::id_type Process::open(const std::string &command, const std::string &path, const environment_type *environment) noexcept {
   return open([&command, &path, &environment] {
-    auto escaped_path = [&path](){
-      auto path_escaped=path;
+    std::string path_escaped;
+    if(!path.empty()) {
+      path_escaped=path;
       size_t pos=0;
       //Based on https://www.reddit.com/r/cpp/comments/3vpjqg/a_new_platform_independent_process_library_for_c11/cxsxyb7
       while((pos=path_escaped.find('\'', pos))!=std::string::npos) {
         path_escaped.replace(pos, 1, "'\\''");
         pos+=4;
       }
-      return path_escaped;
-    };
+    }
 
-    if (!environment) {
-      if (!path.empty())
-        execl("/bin/sh", "sh", "-c", ("cd '"+escaped_path()+"' && "+command).c_str(), NULL);
+    if(!environment) {
+      if(!path.empty())
+        execl("/bin/sh", "sh", "-c", ("cd '"+path_escaped+"' && "+command).c_str(), nullptr);
       else
-        execl("/bin/sh", "sh", "-c", command.c_str(), NULL);
-    } else {
-      // improveable?
-      std::vector <std::string> concatenated;
-      std::vector <char const*> pointer_store;
-
-      concatenated.reserve(environment.get().size());
-      for (auto const& var : environment.get()) {
-        concatenated.push_back(var.first + "=" + var.second);
-        pointer_store.push_back(concatenated.back().c_str());
+        execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
+    }
+    else {
+      std::vector<std::string> environment_strs;
+      std::vector<const char*> environment_pointers;
+      environment_strs.reserve(environment->size());
+      environment_pointers.reserve(environment->size()+1);
+      for(const auto &e: *environment) {
+        environment_strs.emplace_back(e.first+'='+e.second);
+        environment_pointers.emplace_back(environment_strs.back().c_str());
       }
-      pointer_store.push_back((char const*)nullptr);
-
-      if (!path.empty())
-        execle("/bin/sh", "sh", "-c", ("cd '"+escaped_path()+"' && "+command).c_str(), (char*)nullptr, &pointer_store.front());
+      environment_pointers.emplace_back(nullptr);
+      if(!path.empty())
+        execle("/bin/sh", "sh", "-c", ("cd '"+path_escaped+"' && "+command).c_str(), nullptr, environment_pointers.data());
       else
-        execle("/bin/sh", "sh", "-c", command.c_str(), (char*)nullptr, &pointer_store.front());
+        execle("/bin/sh", "sh", "-c", command.c_str(), nullptr, environment_pointers.data());
     }
   });
 }

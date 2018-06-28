@@ -78,4 +78,22 @@ int main() {
     assert(process.try_get_exit_status(exit_status));
     assert(exit_status==0);
   }
+  
+  {
+    Process process("echo $VAR1 $VAR2", "", {{"VAR1", "value1"}, {"VAR2", "value2"}}, [output](const char *bytes, size_t n) {
+      *output+=string(bytes, n);
+    });
+    assert(process.get_exit_status()==0);
+    assert(output->substr(0, 13)=="value1 value2");
+    output->clear();
+  }
+  
+  {
+    Process process("echo $VAR1 $VAR2", "", {{"VAR1", "value1 value2"}, {"VAR2", "\"value3 value 4\""}}, [output](const char *bytes, size_t n) {
+      *output+=string(bytes, n);
+    });
+    assert(process.get_exit_status()==0);
+    assert(output->substr(0, 30)=="value1 value2 \"value3 value 4\"");
+    output->clear();
+  }
 }

@@ -34,11 +34,7 @@ private:
 std::mutex create_process_mutex;
 
 //Based on the example at https://msdn.microsoft.com/en-us/library/windows/desktop/ms682499(v=vs.85).aspx.
-Process::id_type Process::open(
-  const string_type &command,
-  const string_type &path,
-  const OptionalWrapper <environment_container_type>& environment
-) noexcept {
+Process::id_type Process::open(const string_type &command, const string_type &path, const environment_type *environment) noexcept {
   if(open_stdin)
     stdin_fd=std::unique_ptr<fd_type>(new fd_type(NULL));
   if(read_stdout)
@@ -107,26 +103,14 @@ Process::id_type Process::open(
   process_command+="\"";
 #endif
 
-  BOOL bSuccess = false;
-  if (!environment)
-  {
-    bSuccess = CreateProcess(nullptr, process_command.empty()?nullptr:&process_command[0], nullptr, nullptr, TRUE, 0,
-                             nullptr, path.empty()?nullptr:path.c_str(), &startup_info, &process_info);
-  } else {
-    // improveable?
-    string_type virtEnv;
-    for (auto const& i : environment.get())
-    {
-      virtEnv += i.first;
-      virtEnv.push_back('=');
-      virtEnv += i.second;
-      virtEnv.push_back('\0');
-    }
-    virtEnv.push_back('\0');
-
-    bSuccess = CreateProcess(nullptr, process_command.empty()?nullptr:&process_command[0], nullptr, nullptr, TRUE, 0,
-                             &virtEnv[0], path.empty()?nullptr:path.c_str(), &startup_info, &process_info);
+  string_type environment_str;
+  if(environment) {
+    for(const auto &e: *environment)
+      environment_str += e.first+'='+e.second+'\0';
+    environment_str += '\0';
   }
+  BOOL bSuccess = CreateProcess(nullptr, process_command.empty()?nullptr:&process_command[0], nullptr, nullptr, TRUE, 0,
+                                environment_str.empty()?nullptr:&environment_str[0], path.empty()?nullptr:path.c_str(), &startup_info, &process_info);
 
   if(!bSuccess)
     return 0;
