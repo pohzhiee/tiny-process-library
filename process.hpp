@@ -13,12 +13,12 @@
 
 namespace TinyProcessLib {
 
-///Platform independent class for creating processes
+/// Platform independent class for creating processes
 class Process {
 public:
 #ifdef _WIN32
-  typedef unsigned long id_type; //Process id type
-  typedef void *fd_type;         //File descriptor type
+  typedef unsigned long id_type; // Process id type
+  typedef void *fd_type;         // File descriptor type
 #ifdef UNICODE
   typedef std::wstring string_type;
 #else
@@ -40,14 +40,19 @@ private:
 #endif
   };
 public:
-  ///Note on Windows: it seems not possible to specify which pipes to redirect.
-  ///Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
-  ///the stdout, stderr and stdin are sent to the parent process instead.
+  /// Starts a process with the environment of the calling process.
+  /// Note on Windows: it seems not possible to specify which pipes to redirect.
+  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
+  /// the stdout, stderr and stdin are sent to the parent process instead.
   Process(const string_type &command, const string_type &path=string_type(),
           std::function<void(const char *bytes, size_t n)> read_stdout=nullptr,
           std::function<void(const char *bytes, size_t n)> read_stderr=nullptr,
           bool open_stdin=false,
           size_t buffer_size=131072) noexcept;
+  /// Starts a process with specified environment.
+  /// Note on Windows: it seems not possible to specify which pipes to redirect.
+  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
+  /// the stdout, stderr and stdin are sent to the parent process instead.
   Process(const string_type &command,
           const string_type &path,
           const environment_type &environment,
@@ -56,6 +61,7 @@ public:
           bool open_stdin=false,
           size_t buffer_size=131072) noexcept;
 #ifndef _WIN32
+  /// Starts a process with the environment of the calling process.
   /// Supported on Unix-like systems only.
   Process(const std::function<void()> &function,
           std::function<void(const char *bytes, size_t n)> read_stdout=nullptr,
@@ -65,22 +71,22 @@ public:
 #endif
   ~Process() noexcept;
 
-  ///Get the process id of the started process.
+  /// Get the process id of the started process.
   id_type get_id() const noexcept;
-  ///Wait until process is finished, and return exit status.
+  /// Wait until process is finished, and return exit status.
   int get_exit_status() noexcept;
-  ///If process is finished, returns true and sets the exit status. Returns false otherwise.
+  /// If process is finished, returns true and sets the exit status. Returns false otherwise.
   bool try_get_exit_status(int &exit_status) noexcept;
-  ///Write to stdin.
+  /// Write to stdin.
   bool write(const char *bytes, size_t n);
-  ///Write to stdin. Convenience function using write(const char *, size_t).
+  /// Write to stdin. Convenience function using write(const char *, size_t).
   bool write(const std::string &data);
-  ///Close stdin. If the process takes parameters from stdin, use this to notify that all parameters have been sent.
+  /// Close stdin. If the process takes parameters from stdin, use this to notify that all parameters have been sent.
   void close_stdin() noexcept;
 
-  ///Kill the process. force=true is only supported on Unix-like systems.
+  /// Kill the process. force=true is only supported on Unix-like systems.
   void kill(bool force=false) noexcept;
-  ///Kill a given process id. Use kill(bool force) instead if possible. force=true is only supported on Unix-like systems.
+  /// Kill a given process id. Use kill(bool force) instead if possible. force=true is only supported on Unix-like systems.
   static void kill(id_type id, bool force=false) noexcept;
 
 private:
