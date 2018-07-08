@@ -1,8 +1,10 @@
 #include "process.hpp"
+// clang-format off
+#include <windows.h>
+// clang-format on
 #include <TlHelp32.h>
 #include <cstring>
 #include <stdexcept>
-#include <windows.h>
 
 namespace TinyProcessLib {
 
