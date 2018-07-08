@@ -1,12 +1,12 @@
 #ifndef TINY_PROCESS_LIBRARY_HPP_
 #define TINY_PROCESS_LIBRARY_HPP_
-#include <string>
 #include <functional>
-#include <vector>
-#include <unordered_map>
-#include <mutex>
-#include <thread>
 #include <memory>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <unordered_map>
+#include <vector>
 #ifndef _WIN32
 #include <sys/wait.h>
 #endif
@@ -30,6 +30,7 @@ public:
   typedef std::string string_type;
 #endif
   typedef std::unordered_map<string_type, string_type> environment_type;
+
 private:
   class Data {
   public:
@@ -39,16 +40,17 @@ private:
     void *handle;
 #endif
   };
+
 public:
   /// Starts a process with the environment of the calling process.
   /// Note on Windows: it seems not possible to specify which pipes to redirect.
   /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
   /// the stdout, stderr and stdin are sent to the parent process instead.
-  Process(const string_type &command, const string_type &path=string_type(),
-          std::function<void(const char *bytes, size_t n)> read_stdout=nullptr,
-          std::function<void(const char *bytes, size_t n)> read_stderr=nullptr,
-          bool open_stdin=false,
-          size_t buffer_size=131072) noexcept;
+  Process(const string_type &command, const string_type &path = string_type(),
+          std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
+          std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
+          bool open_stdin = false,
+          size_t buffer_size = 131072) noexcept;
   /// Starts a process with specified environment.
   /// Note on Windows: it seems not possible to specify which pipes to redirect.
   /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
@@ -56,18 +58,18 @@ public:
   Process(const string_type &command,
           const string_type &path,
           const environment_type &environment,
-          std::function<void(const char *bytes, size_t n)> read_stdout=nullptr,
-          std::function<void(const char *bytes, size_t n)> read_stderr=nullptr,
-          bool open_stdin=false,
-          size_t buffer_size=131072) noexcept;
+          std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
+          std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
+          bool open_stdin = false,
+          size_t buffer_size = 131072) noexcept;
 #ifndef _WIN32
   /// Starts a process with the environment of the calling process.
   /// Supported on Unix-like systems only.
   Process(const std::function<void()> &function,
-          std::function<void(const char *bytes, size_t n)> read_stdout=nullptr,
-          std::function<void(const char *bytes, size_t n)> read_stderr=nullptr,
-          bool open_stdin=false,
-          size_t buffer_size=131072) noexcept;
+          std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
+          std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
+          bool open_stdin = false,
+          size_t buffer_size = 131072) noexcept;
 #endif
   ~Process() noexcept;
 
@@ -85,16 +87,16 @@ public:
   void close_stdin() noexcept;
 
   /// Kill the process. force=true is only supported on Unix-like systems.
-  void kill(bool force=false) noexcept;
+  void kill(bool force = false) noexcept;
   /// Kill a given process id. Use kill(bool force) instead if possible. force=true is only supported on Unix-like systems.
-  static void kill(id_type id, bool force=false) noexcept;
+  static void kill(id_type id, bool force = false) noexcept;
 
 private:
   Data data;
   bool closed;
   std::mutex close_mutex;
-  std::function<void(const char* bytes, size_t n)> read_stdout;
-  std::function<void(const char* bytes, size_t n)> read_stderr;
+  std::function<void(const char *bytes, size_t n)> read_stdout;
+  std::function<void(const char *bytes, size_t n)> read_stderr;
   std::thread stdout_thread, stderr_thread;
   bool open_stdin;
   std::mutex stdin_mutex;
@@ -110,6 +112,6 @@ private:
   void close_fds() noexcept;
 };
 
-} // TinyProsessLib
+} // namespace TinyProcessLib
 
-#endif  // TINY_PROCESS_LIBRARY_HPP_
+#endif // TINY_PROCESS_LIBRARY_HPP_

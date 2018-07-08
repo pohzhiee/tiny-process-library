@@ -13,8 +13,8 @@ int main() {
   Process process1a("echo Hello World", "", [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });
-  auto exit_status=process1a.get_exit_status();
-  cout << "Example 1a process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  auto exit_status = process1a.get_exit_status();
+  cout << "Example 1a process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -26,8 +26,8 @@ int main() {
   }, [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });
-  exit_status=process1b.get_exit_status();
-  cout << "Example 1b process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  exit_status = process1b.get_exit_status();
+  cout << "Example 1b process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 #endif
 
@@ -38,29 +38,29 @@ int main() {
   }, [](const char *bytes, size_t n) {
     cout << "Output from stderr: " << string(bytes, n);
     //add a newline for prettier output on some platforms:
-    if(bytes[n-1]!='\n')
+    if(bytes[n - 1] != '\n')
       cout << endl;
   });
-  exit_status=process2.get_exit_status();
-  cout << "Example 2 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  exit_status = process2.get_exit_status();
+  cout << "Example 2 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
   cout << endl << "Example 3 - async sleep process" << endl;
   thread thread3([]() {
     Process process3("sleep 2");
-    auto exit_status=process3.get_exit_status();
-    cout << "Example 3 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+    auto exit_status = process3.get_exit_status();
+    cout << "Example 3 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   });
   thread3.detach();
   this_thread::sleep_for(chrono::seconds(4));
 
 
   cout << endl << "Example 4 - killing async sleep process after 2 seconds" << endl;
-  auto process4=make_shared<Process>("sleep 4");
+  auto process4 = make_shared<Process>("sleep 4");
   thread thread4([process4]() {
-    auto exit_status=process4->get_exit_status();
-    cout << "Example 4 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+    auto exit_status = process4->get_exit_status();
+    cout << "Example 4 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   });
   thread4.detach();
   this_thread::sleep_for(chrono::seconds(2));
@@ -74,11 +74,11 @@ int main() {
   }, [](const char *bytes, size_t n) {
     cout << "Output from stderr: " << string(bytes, n);
     //add a newline for prettier output on some platforms:
-    if(bytes[n-1]!='\n')
+    if(bytes[n - 1] != '\n')
       cout << endl;
   });
-  exit_status=process5.get_exit_status();
-  cout << "Example 5 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  exit_status = process5.get_exit_status();
+  cout << "Example 5 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -88,8 +88,8 @@ int main() {
   }, nullptr, true);
   process6.write("echo Hello from bash\n");
   process6.write("exit\n");
-  exit_status=process6.get_exit_status();
-  cout << "Example 6 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  exit_status = process6.get_exit_status();
+  cout << "Example 6 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -99,8 +99,8 @@ int main() {
   }, nullptr, true);
   process7.write("Hello cat\n");
   process7.close_stdin();
-  exit_status=process7.get_exit_status();
-  cout << "Example 7 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  exit_status = process7.get_exit_status();
+  cout << "Example 7 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -110,7 +110,7 @@ int main() {
     cout << "Example 8 process is running" << endl;
     this_thread::sleep_for(chrono::seconds(1));
   }
-  cout << "Example 8 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  cout << "Example 8 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -119,7 +119,7 @@ int main() {
     std::cout << std::string{bytes, n};
   });
   exit_status = process9.get_exit_status();
-  cout << "Example 9 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  cout << "Example 9 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -128,7 +128,7 @@ int main() {
     std::cout << std::string{bytes, n};
   });
   exit_status = process10.get_exit_status();
-  cout << "Example 10 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  cout << "Example 10 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
 
 
 #else
@@ -139,8 +139,8 @@ int main() {
   Process process1("cmd /C echo Hello World", "", [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });
-  auto exit_status=process1.get_exit_status();
-  cout << "Example 1 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  auto exit_status = process1.get_exit_status();
+  cout << "Example 1 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
@@ -150,29 +150,29 @@ int main() {
   }, [](const char *bytes, size_t n) {
     cout << "Output from stderr: " << string(bytes, n);
     //add a newline for prettier output on some platforms:
-    if(bytes[n-1]!='\n')
+    if(bytes[n - 1] != '\n')
       cout << endl;
   });
-  exit_status=process2.get_exit_status();
-  cout << "Example 2 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  exit_status = process2.get_exit_status();
+  cout << "Example 2 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 
 
   cout << endl << "Example 3 - async sleep process" << endl;
   thread thread3([]() {
     Process process3("timeout 2");
-    auto exit_status=process3.get_exit_status();
-    cout << "Example 3 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+    auto exit_status = process3.get_exit_status();
+    cout << "Example 3 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   });
   thread3.detach();
   this_thread::sleep_for(chrono::seconds(4));
 
 
   cout << endl << "Example 4 - killing async sleep process after 2 seconds" << endl;
-  auto process4=make_shared<Process>("timeout 4");
+  auto process4 = make_shared<Process>("timeout 4");
   thread thread4([process4]() {
-    auto exit_status=process4->get_exit_status();
-    cout << "Example 4 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+    auto exit_status = process4->get_exit_status();
+    cout << "Example 4 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   });
   thread4.detach();
   this_thread::sleep_for(chrono::seconds(2));
@@ -186,7 +186,7 @@ int main() {
     cout << "Example 5 process is running" << endl;
     this_thread::sleep_for(chrono::seconds(1));
   }
-  cout << "Example 5 process returned: " << exit_status << " (" << (exit_status==0?"success":"failure") << ")" << endl;
+  cout << "Example 5 process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
 
 
 #endif
