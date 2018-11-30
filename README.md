@@ -15,7 +15,7 @@ This library was created for, and is used by the C++ IDE project [juCi++](https:
 * Correctly closes file descriptors/handles
 
 ### Usage
-See [examples.cpp](https://gitlab.com/eidheim/tiny-process-library/blob/master/examples.cpp).
+See [examples.cpp](examples.cpp).
 
 ### Get, compile and run
 
