@@ -37,6 +37,24 @@ int main() {
 
 #ifndef _WIN32
   {
+    Process process("pwd", "/bin", [output](const char *bytes, size_t n) {
+      *output += string(bytes, n);
+    });
+    assert(process.get_exit_status() == 0);
+    assert(output->substr(0, 4) == "/bin");
+    output->clear();
+  }
+
+  {
+    Process process(std::vector<string>{"/bin/pwd"}, "/bin", [output](const char *bytes, size_t n) {
+      *output += string(bytes, n);
+    });
+    assert(process.get_exit_status() == 0);
+    assert(output->substr(0, 4) == "/bin");
+    output->clear();
+  }
+
+  {
     Process process(std::vector<string>{"/bin/sh", "-c", "echo $VAR1 $VAR2"}, "", {{"VAR1", "value1"}, {"VAR2", "value2"}}, [output](const char *bytes, size_t n) {
       *output += string(bytes, n);
     });
