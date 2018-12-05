@@ -119,39 +119,56 @@ Process::id_type Process::open(const std::function<void()> &function) noexcept {
   return pid;
 }
 
+Process::id_type Process::open(const std::vector<string_type> &arguments, const string_type &path, const environment_type *environment) noexcept {
+  return open([&arguments, &path, &environment] {
+    if(arguments.empty())
+      return;
+
+    std::vector<const char *> argv_ptrs;
+    argv_ptrs.reserve(arguments.size() + 1);
+    for(auto &argument : arguments)
+      argv_ptrs.emplace_back(argument.c_str());
+    argv_ptrs.emplace_back(nullptr);
+
+    if(!path.empty())
+      chdir(path.c_str());
+
+    if(!environment)
+      execv(arguments[0].c_str(), const_cast<char *const *>(argv_ptrs.data()));
+    else {
+      std::vector<std::string> env_strs;
+      std::vector<const char *> env_ptrs;
+      env_strs.reserve(environment->size());
+      env_ptrs.reserve(environment->size() + 1);
+      for(const auto &e : *environment) {
+        env_strs.emplace_back(e.first + '=' + e.second);
+        env_ptrs.emplace_back(env_strs.back().c_str());
+      }
+      env_ptrs.emplace_back(nullptr);
+
+      execve(arguments[0].c_str(), const_cast<char *const *>(argv_ptrs.data()), const_cast<char *const *>(env_ptrs.data()));
+    }
+  });
+}
+
 Process::id_type Process::open(const std::string &command, const std::string &path, const environment_type *environment) noexcept {
   return open([&command, &path, &environment] {
-    std::string path_escaped;
-    if(!path.empty()) {
-      path_escaped = path;
-      size_t pos = 0;
-      //Based on https://www.reddit.com/r/cpp/comments/3vpjqg/a_new_platform_independent_process_library_for_c11/cxsxyb7
-      while((pos = path_escaped.find('\'', pos)) != std::string::npos) {
-        path_escaped.replace(pos, 1, "'\\''");
-        pos += 4;
-      }
-    }
+    if(!path.empty())
+      chdir(path.c_str());
 
-    if(!environment) {
-      if(!path.empty())
-        execl("/bin/sh", "sh", "-c", ("cd '" + path_escaped + "' && " + command).c_str(), nullptr);
-      else
-        execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
-    }
+    if(!environment)
+      execl("/bin/sh", "/bin/sh", "-c", command.c_str(), nullptr);
     else {
-      std::vector<std::string> environment_strs;
-      std::vector<const char *> environment_pointers;
-      environment_strs.reserve(environment->size());
-      environment_pointers.reserve(environment->size() + 1);
+      std::vector<std::string> env_strs;
+      std::vector<const char *> env_ptrs;
+      env_strs.reserve(environment->size());
+      env_ptrs.reserve(environment->size() + 1);
       for(const auto &e : *environment) {
-        environment_strs.emplace_back(e.first + '=' + e.second);
-        environment_pointers.emplace_back(environment_strs.back().c_str());
+        env_strs.emplace_back(e.first + '=' + e.second);
+        env_ptrs.emplace_back(env_strs.back().c_str());
       }
-      environment_pointers.emplace_back(nullptr);
-      if(!path.empty())
-        execle("/bin/sh", "sh", "-c", ("cd '" + path_escaped + "' && " + command).c_str(), nullptr, environment_pointers.data());
-      else
-        execle("/bin/sh", "sh", "-c", command.c_str(), nullptr, environment_pointers.data());
+      env_ptrs.emplace_back(nullptr);
+      execle("/bin/sh", "/bin/sh", "-c", command.c_str(), nullptr, env_ptrs.data());
     }
   });
 }

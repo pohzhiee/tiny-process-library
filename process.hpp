@@ -46,7 +46,26 @@ public:
   /// Note on Windows: it seems not possible to specify which pipes to redirect.
   /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
   /// the stdout, stderr and stdin are sent to the parent process instead.
+  Process(const std::vector<string_type> &arguments, const string_type &path = string_type(),
+          std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
+          std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
+          bool open_stdin = false,
+          size_t buffer_size = 131072) noexcept;
+  /// Starts a process with the environment of the calling process.
+  /// Note on Windows: it seems not possible to specify which pipes to redirect.
+  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
+  /// the stdout, stderr and stdin are sent to the parent process instead.
   Process(const string_type &command, const string_type &path = string_type(),
+          std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
+          std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
+          bool open_stdin = false,
+          size_t buffer_size = 131072) noexcept;
+  /// Note on Windows: it seems not possible to specify which pipes to redirect.
+  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
+  /// the stdout, stderr and stdin are sent to the parent process instead.
+  Process(const std::vector<string_type> &arguments,
+          const string_type &path,
+          const environment_type &environment,
           std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
           std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
           bool open_stdin = false,
@@ -61,7 +80,7 @@ public:
           std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
           std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
           bool open_stdin = false,
-          size_t buffer_size = 131072) noexcept;
+          size_t buffer_size = 131072) noexcept; /// Starts a process with specified environment.
 #ifndef _WIN32
   /// Starts a process with the environment of the calling process.
   /// Supported on Unix-like systems only.
@@ -104,6 +123,7 @@ private:
 
   std::unique_ptr<fd_type> stdout_fd, stderr_fd, stdin_fd;
 
+  id_type open(const std::vector<string_type> &arguments, const string_type &path, const environment_type *environment = nullptr) noexcept;
   id_type open(const string_type &command, const string_type &path, const environment_type *environment = nullptr) noexcept;
 #ifndef _WIN32
   id_type open(const std::function<void()> &function) noexcept;

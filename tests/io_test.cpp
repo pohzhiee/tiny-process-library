@@ -17,7 +17,34 @@ int main() {
     output->clear();
   }
 
+  {
+    Process process(std::vector<string>{"/bin/echo", "Test"}, "", [output](const char *bytes, size_t n) {
+      *output += string(bytes, n);
+    });
+    assert(process.get_exit_status() == 0);
+    assert(output->substr(0, 4) == "Test");
+    output->clear();
+  }
+
+  {
+    Process process(std::vector<string>{"/bin/echo", "Test"}, "", {{"VAR1", "value1"}, {"VAR2", "value2"}}, [output](const char *bytes, size_t n) {
+      *output += string(bytes, n);
+    });
+    assert(process.get_exit_status() == 0);
+    assert(output->substr(0, 4) == "Test");
+    output->clear();
+  }
+
 #ifndef _WIN32
+  {
+    Process process(std::vector<string>{"/bin/sh", "-c", "echo $VAR1 $VAR2"}, "", {{"VAR1", "value1"}, {"VAR2", "value2"}}, [output](const char *bytes, size_t n) {
+      *output += string(bytes, n);
+    });
+    assert(process.get_exit_status() == 0);
+    assert(output->substr(0, 13) == "value1 value2");
+    output->clear();
+  }
+
   {
     Process process([] {
       cout << "Test" << endl;
