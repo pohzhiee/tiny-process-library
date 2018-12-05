@@ -9,7 +9,7 @@ int main() {
   //The following examples are for Unix-like systems and Windows through MSYS2
 
 
-  cout << "Example 1a - the mandatory Hello World through an executable" << endl;
+  cout << "Example 1a - the mandatory Hello World through a command" << endl;
   Process process1a("echo Hello World", "", [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });
@@ -18,16 +18,25 @@ int main() {
   this_thread::sleep_for(chrono::seconds(2));
 
 
+  cout << "Example 1b - Hello World using arguments" << endl;
+  Process process1b(vector<string>{"/bin/echo", "Hello", "World"}, "", [](const char *bytes, size_t n) {
+    cout << "Output from stdout: " << string(bytes, n);
+  });
+  exit_status = process1b.get_exit_status();
+  cout << "Example 1b process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
+  this_thread::sleep_for(chrono::seconds(2));
+
+
 #ifndef _WIN32
-  cout << endl << "Example 1b - Hello World through a function on Unix-like systems" << endl;
-  Process process1b([] {
+  cout << endl << "Example 1c - Hello World through a function on Unix-like systems" << endl;
+  Process process1c([] {
     cout << "Hello World" << endl;
     exit(0);
   }, [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });
-  exit_status = process1b.get_exit_status();
-  cout << "Example 1b process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
+  exit_status = process1c.get_exit_status();
+  cout << "Example 1c process returned: " << exit_status << " (" << (exit_status == 0 ? "success" : "failure") << ")" << endl;
   this_thread::sleep_for(chrono::seconds(2));
 #endif
 
