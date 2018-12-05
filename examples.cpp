@@ -18,7 +18,7 @@ int main() {
   this_thread::sleep_for(chrono::seconds(2));
 
 
-  cout << "Example 1b - Hello World using arguments" << endl;
+  cout << endl << "Example 1b - Hello World using arguments" << endl;
   Process process1b(vector<string>{"/bin/echo", "Hello", "World"}, "", [](const char *bytes, size_t n) {
     cout << "Output from stdout: " << string(bytes, n);
   });

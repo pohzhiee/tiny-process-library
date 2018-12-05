@@ -97,8 +97,8 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
   if(stdin_fd || stdout_fd || stderr_fd)
     startup_info.dwFlags |= STARTF_USESTDHANDLES;
 
-#ifdef MSYS_PROCESS_USE_SH
   auto process_command = command;
+#ifdef MSYS_PROCESS_USE_SH
   size_t pos = 0;
   while((pos = process_command.find('\\', pos)) != string_type::npos) {
     process_command.replace(pos, 1, "\\\\\\\\");
@@ -111,8 +111,6 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
   }
   process_command.insert(0, "sh -c \"");
   process_command += "\"";
-#else
-  auto &process_command = command;
 #endif
 
   string_type environment_str;
@@ -127,7 +125,7 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
     environment_str += '\0';
 #endif
   }
-  BOOL bSuccess = CreateProcess(nullptr, process_command.empty() ? nullptr : const_cast<char *>(process_command.c_str()), nullptr, nullptr, TRUE, 0,
+  BOOL bSuccess = CreateProcess(nullptr, process_command.empty() ? nullptr : &process_command[0], nullptr, nullptr, TRUE, 0,
                                 environment_str.empty() ? nullptr : &environment_str[0], path.empty() ? nullptr : path.c_str(), &startup_info, &process_info);
 
   if(!bSuccess)
