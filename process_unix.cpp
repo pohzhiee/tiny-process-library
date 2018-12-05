@@ -122,7 +122,7 @@ Process::id_type Process::open(const std::function<void()> &function) noexcept {
 Process::id_type Process::open(const std::vector<string_type> &arguments, const string_type &path, const environment_type *environment) noexcept {
   return open([&arguments, &path, &environment] {
     if(arguments.empty())
-      return;
+      exit(127);
 
     std::vector<const char *> argv_ptrs;
     argv_ptrs.reserve(arguments.size() + 1);
@@ -130,8 +130,10 @@ Process::id_type Process::open(const std::vector<string_type> &arguments, const 
       argv_ptrs.emplace_back(argument.c_str());
     argv_ptrs.emplace_back(nullptr);
 
-    if(!path.empty())
-      chdir(path.c_str());
+    if(!path.empty()) {
+      if(chdir(path.c_str()) != 0)
+        exit(1);
+    }
 
     if(!environment)
       execv(arguments[0].c_str(), const_cast<char *const *>(argv_ptrs.data()));
@@ -153,8 +155,10 @@ Process::id_type Process::open(const std::vector<string_type> &arguments, const 
 
 Process::id_type Process::open(const std::string &command, const std::string &path, const environment_type *environment) noexcept {
   return open([&command, &path, &environment] {
-    if(!path.empty())
-      chdir(path.c_str());
+    if(!path.empty()) {
+      if(chdir(path.c_str()) != 0)
+        exit(1);
+    }
 
     if(!environment)
       execl("/bin/sh", "/bin/sh", "-c", command.c_str(), nullptr);
