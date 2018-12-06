@@ -13,7 +13,10 @@
 
 namespace TinyProcessLib {
 
-/// Platform independent class for creating processes
+/// Platform independent class for creating processes.
+/// Note on Windows: it seems not possible to specify which pipes to redirect.
+/// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
+/// the stdout, stderr and stdin are sent to the parent process instead.
 class Process {
 public:
 #ifdef _WIN32
@@ -43,26 +46,19 @@ private:
 
 public:
   /// Starts a process with the environment of the calling process.
-  /// Note on Windows: it seems not possible to specify which pipes to redirect.
-  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
-  /// the stdout, stderr and stdin are sent to the parent process instead.
   Process(const std::vector<string_type> &arguments, const string_type &path = string_type(),
           std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
           std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
           bool open_stdin = false,
           size_t buffer_size = 131072) noexcept;
   /// Starts a process with the environment of the calling process.
-  /// Note on Windows: it seems not possible to specify which pipes to redirect.
-  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
-  /// the stdout, stderr and stdin are sent to the parent process instead.
   Process(const string_type &command, const string_type &path = string_type(),
           std::function<void(const char *bytes, size_t n)> read_stdout = nullptr,
           std::function<void(const char *bytes, size_t n)> read_stderr = nullptr,
           bool open_stdin = false,
           size_t buffer_size = 131072) noexcept;
-  /// Note on Windows: it seems not possible to specify which pipes to redirect.
-  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
-  /// the stdout, stderr and stdin are sent to the parent process instead.
+
+  /// Starts a process with specified environment.
   Process(const std::vector<string_type> &arguments,
           const string_type &path,
           const environment_type &environment,
@@ -71,9 +67,6 @@ public:
           bool open_stdin = false,
           size_t buffer_size = 131072) noexcept;
   /// Starts a process with specified environment.
-  /// Note on Windows: it seems not possible to specify which pipes to redirect.
-  /// Thus, at the moment, if read_stdout==nullptr, read_stderr==nullptr and open_stdin==false,
-  /// the stdout, stderr and stdin are sent to the parent process instead.
   Process(const string_type &command,
           const string_type &path,
           const environment_type &environment,
