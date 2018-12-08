@@ -77,6 +77,15 @@ int main() {
 #endif
 
   {
+    Process process("ls an_incorrect_path", "", nullptr, [error](const char *bytes, size_t n) {
+      *error += string(bytes, n);
+    });
+    assert(process.get_exit_status() > 0);
+    assert(!error->empty());
+    error->clear();
+  }
+
+  {
     Process process("echo Test && ls an_incorrect_path", "", [output](const char *bytes, size_t n) {
       *output += string(bytes, n);
     }, [error](const char *bytes, size_t n) {
