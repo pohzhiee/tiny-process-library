@@ -204,7 +204,13 @@ int Process::get_exit_status() noexcept {
     return -1;
 
   int exit_status;
-  waitpid(data.id, &exit_status, 0);
+  id_type p;
+  do
+  {
+    p = waitpid(data.id, &exit_status, 0);
+  }
+  while(p < 0);
+
   {
     std::lock_guard<std::mutex> lock(close_mutex);
     closed = true;
@@ -221,7 +227,7 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
     return false;
 
   id_type p = waitpid(data.id, &exit_status, WNOHANG);
-  if(p == 0)
+  if(p <= 0)
     return false;
 
   {
