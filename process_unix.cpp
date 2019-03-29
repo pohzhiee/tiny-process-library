@@ -209,7 +209,13 @@ int Process::get_exit_status() noexcept {
   {
     p = waitpid(data.id, &exit_status, 0);
   }
-  while(p < 0);
+  while(p < 0 && errno == EINTR);
+
+  if(p < 0 && errno == ECHILD) {
+    // PID doesn't exist (anymore)
+    // we should store exit_status after first successful call to waitpid()
+    exit_status = 256;
+  }
 
   {
     std::lock_guard<std::mutex> lock(close_mutex);
@@ -226,9 +232,15 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
   if(data.id <= 0)
     return false;
 
-  id_type p = waitpid(data.id, &exit_status, WNOHANG);
-  if(p <= 0)
+  const id_type p = waitpid(data.id, &exit_status, WNOHANG);
+  if(p < 0 && errno == ECHILD) {
+    // PID doesn't exist (anymore)
+    // we should store exit_status after first successful call to waitpid()
+    exit_status = 256;
+  }
+  else if(p <= 0) {
     return false;
+  }
 
   {
     std::lock_guard<std::mutex> lock(close_mutex);
