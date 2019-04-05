@@ -212,9 +212,12 @@ int Process::get_exit_status() noexcept {
   while(p < 0 && errno == EINTR);
 
   if(p < 0 && errno == ECHILD) {
-    // PID doesn't exist (anymore)
-    // we should store exit_status after first successful call to waitpid()
-    exit_status = 256;
+    // PID doesn't exist anymore, return previously sampled exit status (or -1)
+    exit_status = data.exit_status.load();
+  }
+  else {
+    // store exit status for future calls
+    data.exit_status.store(exit_status);
   }
 
   {
@@ -234,12 +237,16 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
 
   const id_type p = waitpid(data.id, &exit_status, WNOHANG);
   if(p < 0 && errno == ECHILD) {
-    // PID doesn't exist (anymore)
-    // we should store exit_status after first successful call to waitpid()
-    exit_status = 256;
+    // PID doesn't exist (anymore), another caller may have been faster
+    exit_status = data.exit_status.load();
   }
   else if(p <= 0) {
+    // error occurred
     return false;
+  }
+  else {
+    // store exit status for future calls
+    data.exit_status.store(exit_status);
   }
 
   {

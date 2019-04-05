@@ -5,6 +5,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <atomic>
 #include <unordered_map>
 #include <vector>
 #ifndef _WIN32
@@ -41,6 +42,8 @@ private:
     id_type id;
 #ifdef _WIN32
     void *handle;
+#else
+    std::atomic<int> exit_status{-1};
 #endif
   };
 
