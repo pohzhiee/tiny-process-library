@@ -213,11 +213,13 @@ int Process::get_exit_status() noexcept {
 
   if(p < 0 && errno == ECHILD) {
     // PID doesn't exist anymore, return previously sampled exit status (or -1)
-    exit_status = data.exit_status.load();
+    return data.exit_status;
   }
   else {
     // store exit status for future calls
-    data.exit_status.store(exit_status);
+    if(exit_status >= 256)
+      exit_status = exit_status >> 8;
+    data.exit_status = exit_status;
   }
 
   {
@@ -226,8 +228,6 @@ int Process::get_exit_status() noexcept {
   }
   close_fds();
 
-  if(exit_status >= 256)
-    exit_status = exit_status >> 8;
   return exit_status;
 }
 
@@ -237,16 +237,19 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
 
   const id_type p = waitpid(data.id, &exit_status, WNOHANG);
   if(p < 0 && errno == ECHILD) {
-    // PID doesn't exist (anymore), another caller may have been faster
-    exit_status = data.exit_status.load();
+    // PID doesn't exist anymore, set previously sampled exit status (or -1)
+    exit_status = data.exit_status;
+    return true;
   }
   else if(p <= 0) {
-    // error occurred
+    // Process still running (p==0) or error
     return false;
   }
   else {
     // store exit status for future calls
-    data.exit_status.store(exit_status);
+    if(exit_status >= 256)
+      exit_status = exit_status >> 8;
+    data.exit_status = exit_status;
   }
 
   {
@@ -254,9 +257,6 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
     closed = true;
   }
   close_fds();
-
-  if(exit_status >= 256)
-    exit_status = exit_status >> 8;
 
   return true;
 }
