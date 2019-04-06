@@ -179,67 +179,44 @@ Process::id_type Process::open(const std::string &command, const std::string &pa
 }
 
 void Process::async_read() noexcept {
-  if(data.id <= 0)
+  if(data.id <= 0 || (!stdout_fd && !stderr_fd))
     return;
 
-  if(stdout_fd || stderr_fd) {
-    stdout_stderr_thread = std::thread([this] {
-      std::vector<pollfd> pollfds;
-      if(stdout_fd) {
-        pollfds.emplace_back();
-        pollfds.back().fd = *stdout_fd;
-        pollfds.back().events = POLLIN;
-      }
-      if(stderr_fd) {
-        pollfds.emplace_back();
-        pollfds.back().fd = *stderr_fd;
-        pollfds.back().events = POLLIN;
-      }
-      int ret;
-      ssize_t n;
-      auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
-      while((ret = poll(pollfds.data(), pollfds.size(), -1)) > 0) {
-        if(stdout_fd && stderr_fd) {
-          if(pollfds[0].revents & POLLIN) {
-            if((n = read(*stdout_fd, buffer.get(), buffer_size)) > 0)
+  stdout_stderr_thread = std::thread([this] {
+    std::vector<pollfd> pollfds;
+    int stdout_fd_value = -1;
+    if(stdout_fd) {
+      pollfds.emplace_back();
+      pollfds.back().fd = stdout_fd_value = *stdout_fd;
+      pollfds.back().events = POLLIN;
+    }
+    if(stderr_fd) {
+      pollfds.emplace_back();
+      pollfds.back().fd = *stderr_fd;
+      pollfds.back().events = POLLIN;
+    }
+    int ret;
+    ssize_t n;
+    auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
+    while((ret = poll(pollfds.data(), pollfds.size(), -1)) > 0) {
+      for(auto &pollfd : pollfds) {
+        if(pollfd.revents & POLLIN) {
+          if((n = read(pollfd.fd, buffer.get(), buffer_size)) > 0) {
+            if(pollfd.fd == stdout_fd_value)
               read_stdout(buffer.get(), static_cast<size_t>(n));
-            else if(n < 0)
-              break;
-          }
-          if(pollfds[1].revents & POLLIN) {
-            if((n = read(*stderr_fd, buffer.get(), buffer_size)) > 0)
+            else
               read_stderr(buffer.get(), static_cast<size_t>(n));
-            else if(n < 0)
-              break;
           }
-          if(pollfds[0].revents & (POLLERR | POLLHUP | POLLNVAL))
-            break;
-          if(pollfds[1].revents & (POLLERR | POLLHUP | POLLNVAL))
-            break;
-        }
-        else {
-          if(stdout_fd) {
-            if(pollfds[0].revents & POLLIN) {
-              if((n = read(*stdout_fd, buffer.get(), buffer_size)) > 0)
-                read_stdout(buffer.get(), static_cast<size_t>(n));
-              else if(n < 0)
-                break;
-            }
-          }
-          else {
-            if(pollfds[0].revents & POLLIN) {
-              if((n = read(*stderr_fd, buffer.get(), buffer_size)) > 0)
-                read_stderr(buffer.get(), static_cast<size_t>(n));
-              else if(n < 0)
-                break;
-            }
-          }
-          if(pollfds[0].revents & (POLLERR | POLLHUP | POLLNVAL))
-            break;
+          else if(n < 0 && errno != EINTR)
+            return;
         }
       }
-    });
-  }
+      for(auto &pollfd : pollfds) {
+        if(pollfd.revents & (POLLERR | POLLHUP | POLLNVAL))
+          return;
+      }
+    }
+  });
 }
 
 int Process::get_exit_status() noexcept {
