@@ -184,37 +184,46 @@ void Process::async_read() noexcept {
 
   stdout_stderr_thread = std::thread([this] {
     std::vector<pollfd> pollfds;
-    int stdout_fd_value = -1;
+    struct PollFdExtra {
+      bool read_stdout;
+      bool stopped;
+    };
+    std::vector<PollFdExtra> pollfds_extra;
     if(stdout_fd) {
       pollfds.emplace_back();
-      pollfds.back().fd = stdout_fd_value = *stdout_fd;
+      pollfds_extra.emplace_back(PollFdExtra{true, false});
+      pollfds.back().fd = *stdout_fd;
       pollfds.back().events = POLLIN;
     }
     if(stderr_fd) {
       pollfds.emplace_back();
+      pollfds_extra.emplace_back(PollFdExtra{false, false});
       pollfds.back().fd = *stderr_fd;
       pollfds.back().events = POLLIN;
     }
-    int ret;
-    ssize_t n;
     auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
-    while((ret = poll(pollfds.data(), pollfds.size(), -1)) > 0) {
-      for(auto &pollfd : pollfds) {
-        if(pollfd.revents & POLLIN) {
-          if((n = read(pollfd.fd, buffer.get(), buffer_size)) > 0) {
-            if(pollfd.fd == stdout_fd_value)
-              read_stdout(buffer.get(), static_cast<size_t>(n));
-            else
-              read_stderr(buffer.get(), static_cast<size_t>(n));
+    while(poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR) {
+      for(size_t i = 0; i < pollfds.size(); ++i) {
+        if(!pollfds_extra[i].stopped) {
+          if(pollfds[i].revents & POLLIN) {
+            ssize_t n;
+            if((n = read(pollfds[i].fd, buffer.get(), buffer_size)) > 0) {
+              if(pollfds_extra[i].read_stdout)
+                read_stdout(buffer.get(), static_cast<size_t>(n));
+              else
+                read_stderr(buffer.get(), static_cast<size_t>(n));
+            }
+            else if(n < 0 && errno != EINTR) {
+              pollfds_extra[i].stopped = true;
+              continue;
+            }
           }
-          else if(n < 0 && errno != EINTR)
-            return;
+          if(pollfds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
+            pollfds_extra[i].stopped = true;
         }
       }
-      for(auto &pollfd : pollfds) {
-        if(pollfd.revents & (POLLERR | POLLHUP | POLLNVAL))
-          return;
-      }
+      if(pollfds_extra[0].stopped && (pollfds_extra.size() == 1 || pollfds_extra[1].stopped))
+        return;
     }
   });
 }
