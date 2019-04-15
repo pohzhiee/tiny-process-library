@@ -1,9 +1,10 @@
 #include "process.hpp"
 #include <bitset>
+#include <stdexcept>
 #include <cstdlib>
 #include <poll.h>
 #include <signal.h>
-#include <stdexcept>
+#include <fcntl.h>
 #include <unistd.h>
 
 namespace TinyProcessLib {
@@ -189,13 +190,12 @@ void Process::async_read() noexcept {
     if(stdout_fd) {
       fd_is_stdout.set(pollfds.size());
       pollfds.emplace_back();
-      pollfds.back().fd = *stdout_fd;
+      pollfds.back().fd = fcntl(*stdout_fd, F_SETFL, fcntl(*stdout_fd, F_GETFL) | O_NONBLOCK) >= 0 ? *stdout_fd : -1;
       pollfds.back().events = POLLIN;
     }
     if(stderr_fd) {
-      fd_is_stdout.set(pollfds.size());
       pollfds.emplace_back();
-      pollfds.back().fd = *stderr_fd;
+      pollfds.back().fd = fcntl(*stderr_fd, F_SETFL, fcntl(*stderr_fd, F_GETFL) | O_NONBLOCK) >= 0 ? *stderr_fd : -1;
       pollfds.back().events = POLLIN;
     }
     auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
@@ -216,7 +216,7 @@ void Process::async_read() noexcept {
               else
                 read_stderr(buffer.get(), static_cast<size_t>(n));
             }
-            else if(n < 0 && errno != EINTR) {
+            else if(n < 0 && errno != EINTR && errno != EAGAIN && errno != EWOULDBLOCK) {
               pollfds[i].fd = -1;
               continue;
             }
