@@ -1,4 +1,5 @@
 #include "process.hpp"
+#include <bitset>
 #include <cstdlib>
 #include <poll.h>
 #include <signal.h>
@@ -184,46 +185,45 @@ void Process::async_read() noexcept {
 
   stdout_stderr_thread = std::thread([this] {
     std::vector<pollfd> pollfds;
-    struct PollFdExtra {
-      bool read_stdout;
-      bool stopped;
-    };
-    std::vector<PollFdExtra> pollfds_extra;
+    std::bitset<2> fd_is_stdout;
     if(stdout_fd) {
+      fd_is_stdout.set(pollfds.size());
       pollfds.emplace_back();
-      pollfds_extra.emplace_back(PollFdExtra{true, false});
       pollfds.back().fd = *stdout_fd;
       pollfds.back().events = POLLIN;
     }
     if(stderr_fd) {
+      fd_is_stdout.set(pollfds.size());
       pollfds.emplace_back();
-      pollfds_extra.emplace_back(PollFdExtra{false, false});
       pollfds.back().fd = *stderr_fd;
       pollfds.back().events = POLLIN;
     }
     auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
-    while(poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR) {
+    bool any_open = !pollfds.empty();
+    while(any_open && (poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR)) {
+      any_open = false;
       for(size_t i = 0; i < pollfds.size(); ++i) {
-        if(!pollfds_extra[i].stopped) {
-          if(pollfds[i].revents & POLLIN) {
-            ssize_t n;
-            if((n = read(pollfds[i].fd, buffer.get(), buffer_size)) > 0) {
-              if(pollfds_extra[i].read_stdout)
+        if(pollfds[i].fd >= 0) {
+          if(pollfds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            pollfds[i].fd = -1;
+            continue;
+          }
+          else if(pollfds[i].revents & POLLIN) {
+            const ssize_t n = read(pollfds[i].fd, buffer.get(), buffer_size);
+            if(n > 0) {
+              if(fd_is_stdout[i])
                 read_stdout(buffer.get(), static_cast<size_t>(n));
               else
                 read_stderr(buffer.get(), static_cast<size_t>(n));
             }
             else if(n < 0 && errno != EINTR) {
-              pollfds_extra[i].stopped = true;
+              pollfds[i].fd = -1;
               continue;
             }
           }
-          if(pollfds[i].revents & (POLLERR | POLLHUP | POLLNVAL))
-            pollfds_extra[i].stopped = true;
+          any_open = true;
         }
       }
-      if(pollfds_extra[0].stopped && (pollfds_extra.size() == 1 || pollfds_extra[1].stopped))
-        return;
     }
   });
 }
