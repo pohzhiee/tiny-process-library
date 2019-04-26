@@ -1,10 +1,10 @@
 #include "process.hpp"
 #include <bitset>
-#include <stdexcept>
 #include <cstdlib>
+#include <fcntl.h>
 #include <poll.h>
 #include <signal.h>
-#include <fcntl.h>
+#include <stdexcept>
 #include <unistd.h>
 
 namespace TinyProcessLib {
@@ -204,11 +204,7 @@ void Process::async_read() noexcept {
       any_open = false;
       for(size_t i = 0; i < pollfds.size(); ++i) {
         if(pollfds[i].fd >= 0) {
-          if(pollfds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
-            pollfds[i].fd = -1;
-            continue;
-          }
-          else if(pollfds[i].revents & POLLIN) {
+          if(pollfds[i].revents & POLLIN) {
             const ssize_t n = read(pollfds[i].fd, buffer.get(), buffer_size);
             if(n > 0) {
               if(fd_is_stdout[i])
@@ -220,6 +216,10 @@ void Process::async_read() noexcept {
               pollfds[i].fd = -1;
               continue;
             }
+          }
+          if(pollfds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+            pollfds[i].fd = -1;
+            continue;
           }
           any_open = true;
         }
