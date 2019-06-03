@@ -14,8 +14,8 @@ Process::Data::Data() noexcept : id(-1) {}
 Process::Process(const std::function<void()> &function,
                  std::function<void(const char *, size_t)> read_stdout,
                  std::function<void(const char *, size_t)> read_stderr,
-                 bool open_stdin, size_t buffer_size) noexcept
-    : closed(true), read_stdout(std::move(read_stdout)), read_stderr(std::move(read_stderr)), open_stdin(open_stdin), buffer_size(buffer_size) {
+                 bool open_stdin, const Config &config) noexcept
+    : closed(true), read_stdout(std::move(read_stdout)), read_stderr(std::move(read_stderr)), open_stdin(open_stdin), config(config) {
   open(function);
   async_read();
 }
@@ -198,14 +198,14 @@ void Process::async_read() noexcept {
       pollfds.back().fd = fcntl(*stderr_fd, F_SETFL, fcntl(*stderr_fd, F_GETFL) | O_NONBLOCK) == 0 ? *stderr_fd : -1;
       pollfds.back().events = POLLIN;
     }
-    auto buffer = std::unique_ptr<char[]>(new char[buffer_size]);
+    auto buffer = std::unique_ptr<char[]>(new char[config.buffer_size]);
     bool any_open = !pollfds.empty();
     while(any_open && (poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR)) {
       any_open = false;
       for(size_t i = 0; i < pollfds.size(); ++i) {
         if(pollfds[i].fd >= 0) {
           if(pollfds[i].revents & POLLIN) {
-            const ssize_t n = read(pollfds[i].fd, buffer.get(), buffer_size);
+            const ssize_t n = read(pollfds[i].fd, buffer.get(), config.buffer_size);
             if(n > 0) {
               if(fd_is_stdout[i])
                 read_stdout(buffer.get(), static_cast<size_t>(n));

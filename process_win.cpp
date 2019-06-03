@@ -129,7 +129,7 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
     environment_str += '\0';
 #endif
   }
-  BOOL bSuccess = CreateProcess(nullptr, process_command.empty() ? nullptr : &process_command[0], nullptr, nullptr, TRUE, 0,
+  BOOL bSuccess = CreateProcess(nullptr, process_command.empty() ? nullptr : &process_command[0], nullptr, nullptr, TRUE, config.windows.no_window ? CREATE_NO_WINDOW : 0,
                                 environment_str.empty() ? nullptr : &environment_str[0], path.empty() ? nullptr : path.c_str(), &startup_info, &process_info);
 
   if(!bSuccess)
@@ -157,9 +157,9 @@ void Process::async_read() noexcept {
   if(stdout_fd) {
     stdout_thread = std::thread([this]() {
       DWORD n;
-      std::unique_ptr<char[]> buffer(new char[buffer_size]);
+      std::unique_ptr<char[]> buffer(new char[config.buffer_size]);
       for(;;) {
-        BOOL bSuccess = ReadFile(*stdout_fd, static_cast<CHAR *>(buffer.get()), static_cast<DWORD>(buffer_size), &n, nullptr);
+        BOOL bSuccess = ReadFile(*stdout_fd, static_cast<CHAR *>(buffer.get()), static_cast<DWORD>(config.buffer_size), &n, nullptr);
         if(!bSuccess || n == 0)
           break;
         read_stdout(buffer.get(), static_cast<size_t>(n));
@@ -169,9 +169,9 @@ void Process::async_read() noexcept {
   if(stderr_fd) {
     stderr_thread = std::thread([this]() {
       DWORD n;
-      std::unique_ptr<char[]> buffer(new char[buffer_size]);
+      std::unique_ptr<char[]> buffer(new char[config.buffer_size]);
       for(;;) {
-        BOOL bSuccess = ReadFile(*stderr_fd, static_cast<CHAR *>(buffer.get()), static_cast<DWORD>(buffer_size), &n, nullptr);
+        BOOL bSuccess = ReadFile(*stderr_fd, static_cast<CHAR *>(buffer.get()), static_cast<DWORD>(config.buffer_size), &n, nullptr);
         if(!bSuccess || n == 0)
           break;
         read_stderr(buffer.get(), static_cast<size_t>(n));
