@@ -17,8 +17,8 @@ struct Config {
   /// Buffer size for reading stdout and stderr. Default is 131072.
   std::size_t buffer_size = 131072;
   struct {
-    /// Prevent opening a console window for the process. Default is false.
-    bool no_window = false;
+    /// Prevent opening a console window for the process. Default is true for consistent behavior across OSs.
+    bool no_window = true;
   }
   /// Microsoft Windows specific settings.
   windows;
