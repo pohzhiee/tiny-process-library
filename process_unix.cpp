@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <fcntl.h>
 #include <poll.h>
+#include <set>
 #include <signal.h>
 #include <stdexcept>
 #include <unistd.h>
@@ -88,10 +89,13 @@ Process::id_type Process::open(const std::function<void()> &function) noexcept {
       close(stderr_p[1]);
     }
 
-    //Based on http://stackoverflow.com/a/899533/3808293
-    int fd_max = static_cast<int>(sysconf(_SC_OPEN_MAX)); // truncation is safe
-    for(int fd = 3; fd < fd_max; fd++)
-      close(fd);
+    if(!config.inherit_file_descriptors) {
+      int fd_max = static_cast<int>(sysconf(_SC_OPEN_MAX)); // truncation is safe
+      // Based on http://stackoverflow.com/a/899533/3808293
+      // TODO: find a way to optimize, as this is slow on systems with high fd_max
+      for(int fd = 3; fd < fd_max; fd++)
+        close(fd);
+    }
 
     setpgid(0, 0);
     //TODO: See here on how to emulate tty for colors: http://stackoverflow.com/questions/1401002/trick-an-application-into-thinking-its-stdin-is-interactive-not-a-pipe
