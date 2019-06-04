@@ -129,7 +129,7 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
     environment_str += '\0';
 #endif
   }
-  BOOL bSuccess = CreateProcess(nullptr, process_command.empty() ? nullptr : &process_command[0], nullptr, nullptr, config.inherit_file_descriptors, 0,
+  BOOL bSuccess = CreateProcess(nullptr, process_command.empty() ? nullptr : &process_command[0], nullptr, nullptr, true, CREATE_NO_WINDOW,
                                 environment_str.empty() ? nullptr : &environment_str[0], path.empty() ? nullptr : path.c_str(), &startup_info, &process_info);
 
   if(!bSuccess)
