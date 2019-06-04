@@ -18,12 +18,6 @@ struct Config {
   std::size_t buffer_size = 131072;
   /// Set to true to inherit file descriptors from parent process. Default is false.
   bool inherit_file_descriptors = false;
-  struct {
-    /// Prevent opening a console window for the process. Default is true for consistent behavior across OSs.
-    bool no_window = true;
-  }
-  /// Microsoft Windows specific settings.
-  windows;
 };
 
 /// Platform independent class for creating processes.
