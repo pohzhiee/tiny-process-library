@@ -16,7 +16,8 @@ namespace TinyProcessLib {
 struct Config {
   /// Buffer size for reading stdout and stderr. Default is 131072 (128 kB).
   std::size_t buffer_size = 131072;
-  /// Set to true to inherit file descriptors from parent process. Default is false. Only supported on Unix-like systems.
+  /// Set to true to inherit file descriptors from parent process. Default is false.
+  /// On Windows: has no effect unless read_stdout==nullptr, read_stderr==nullptr and open_stdin==false.
   bool inherit_file_descriptors = false;
 };
 
