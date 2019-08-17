@@ -1,6 +1,9 @@
 #include "process.hpp"
 #include <cassert>
+#include <cstdio>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 using namespace TinyProcessLib;
@@ -15,6 +18,16 @@ int main() {
     assert(process.get_exit_status() == 0);
     assert(output->substr(0, 4) == "Test");
     output->clear();
+  }
+
+  {
+    freopen("io_test_stdout.txt", "w", stdout);
+    Process process("echo Test");
+    assert(process.get_exit_status() == 0);
+    stringstream ss;
+    ifstream ifs("io_test_stdout.txt");
+    ss << ifs.rdbuf();
+    assert(ss.str().substr(0, 4) == "Test");
   }
 
   {
