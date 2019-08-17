@@ -1,4 +1,5 @@
 #include "process.hpp"
+#include <algorithm>
 #include <bitset>
 #include <cstdlib>
 #include <fcntl.h>
@@ -90,9 +91,10 @@ Process::id_type Process::open(const std::function<void()> &function) noexcept {
     }
 
     if(!config.inherit_file_descriptors) {
-      int fd_max = static_cast<int>(sysconf(_SC_OPEN_MAX)); // truncation is safe
-      // Based on http://stackoverflow.com/a/899533/3808293
-      // TODO: find a way to optimize, as this is slow on systems with high fd_max
+      // Optimization on some systems: using 8 * 1024 (Debian's default _SC_OPEN_MAX) as fd_max limit
+      int fd_max = std::min(8192, static_cast<int>(sysconf(_SC_OPEN_MAX))); // Truncation is safe
+      if(fd_max < 0)
+        fd_max = 8192;
       for(int fd = 3; fd < fd_max; fd++)
         close(fd);
     }
@@ -238,11 +240,9 @@ int Process::get_exit_status() noexcept {
 
   int exit_status;
   id_type p;
-  do
-  {
+  do {
     p = waitpid(data.id, &exit_status, 0);
-  }
-  while(p < 0 && errno == EINTR);
+  } while(p < 0 && errno == EINTR);
 
   if(p < 0 && errno == ECHILD) {
     // PID doesn't exist anymore, return previously sampled exit status (or -1)
