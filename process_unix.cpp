@@ -206,7 +206,7 @@ void Process::async_read() noexcept {
     }
     auto buffer = std::unique_ptr<char[]>(new char[config.buffer_size]);
     bool any_open = !pollfds.empty();
-    while(any_open && (poll(pollfds.data(), pollfds.size(), -1) > 0 || errno == EINTR)) {
+    while(any_open && (poll(pollfds.data(), static_cast<nfds_t>(pollfds.size()), -1) > 0 || errno == EINTR)) {
       any_open = false;
       for(size_t i = 0; i < pollfds.size(); ++i) {
         if(pollfds[i].fd >= 0) {
