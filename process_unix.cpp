@@ -164,13 +164,22 @@ Process::id_type Process::open(const std::vector<string_type> &arguments, const 
 
 Process::id_type Process::open(const std::string &command, const std::string &path, const environment_type *environment) noexcept {
   return open([&command, &path, &environment] {
+    auto command_c_str = command.c_str();
+    std::string cd_path_and_command;
     if(!path.empty()) {
-      if(chdir(path.c_str()) != 0)
-        exit(1);
+      auto path_escaped = path;
+      size_t pos = 0;
+      // Based on https://www.reddit.com/r/cpp/comments/3vpjqg/a_new_platform_independent_process_library_for_c11/cxsxyb7
+      while((pos = path_escaped.find('\'', pos)) != std::string::npos) {
+        path_escaped.replace(pos, 1, "'\\''");
+        pos += 4;
+      }
+      cd_path_and_command = "cd '" + path_escaped + "' && " + command; // To avoid resolving symbolic links
+      command_c_str = cd_path_and_command.c_str();
     }
 
     if(!environment)
-      execl("/bin/sh", "/bin/sh", "-c", command.c_str(), nullptr);
+      execl("/bin/sh", "/bin/sh", "-c", command_c_str, nullptr);
     else {
       std::vector<std::string> env_strs;
       std::vector<const char *> env_ptrs;
@@ -181,7 +190,7 @@ Process::id_type Process::open(const std::string &command, const std::string &pa
         env_ptrs.emplace_back(env_strs.back().c_str());
       }
       env_ptrs.emplace_back(nullptr);
-      execle("/bin/sh", "/bin/sh", "-c", command.c_str(), nullptr, env_ptrs.data());
+      execle("/bin/sh", "/bin/sh", "-c", command_c_str, nullptr, env_ptrs.data());
     }
   });
 }
