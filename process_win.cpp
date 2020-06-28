@@ -50,11 +50,11 @@ Process::id_type Process::open(const std::vector<string_type> &arguments, const 
 //Based on the example at https://msdn.microsoft.com/en-us/library/windows/desktop/ms682499(v=vs.85).aspx.
 Process::id_type Process::open(const string_type &command, const string_type &path, const environment_type *environment) noexcept {
   if(open_stdin)
-    stdin_fd = std::unique_ptr<fd_type>(new fd_type(NULL));
+    stdin_fd = std::unique_ptr<fd_type>(new fd_type(nullptr));
   if(read_stdout)
-    stdout_fd = std::unique_ptr<fd_type>(new fd_type(NULL));
+    stdout_fd = std::unique_ptr<fd_type>(new fd_type(nullptr));
   if(read_stderr)
-    stderr_fd = std::unique_ptr<fd_type>(new fd_type(NULL));
+    stderr_fd = std::unique_ptr<fd_type>(new fd_type(nullptr));
 
   Handle stdin_rd_p;
   Handle stdin_wr_p;
@@ -250,12 +250,12 @@ void Process::close_fds() noexcept {
   if(stdin_fd)
     close_stdin();
   if(stdout_fd) {
-    if(*stdout_fd != NULL)
+    if(*stdout_fd != nullptr)
       CloseHandle(*stdout_fd);
     stdout_fd.reset();
   }
   if(stderr_fd) {
-    if(*stderr_fd != NULL)
+    if(*stderr_fd != nullptr)
       CloseHandle(*stderr_fd);
     stderr_fd.reset();
   }
@@ -282,7 +282,7 @@ bool Process::write(const char *bytes, size_t n) {
 void Process::close_stdin() noexcept {
   std::lock_guard<std::mutex> lock(stdin_mutex);
   if(stdin_fd) {
-    if(*stdin_fd != NULL)
+    if(*stdin_fd != nullptr)
       CloseHandle(*stdin_fd);
     stdin_fd.reset();
   }
