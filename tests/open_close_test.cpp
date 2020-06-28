@@ -17,6 +17,11 @@ int main() {
       cerr << "Process returned failure." << endl;
       return 1;
     }
+    exit_status = process.get_exit_status();
+    if(exit_status != 0) {
+      cerr << "Exit status changed from 0 to " << exit_status << endl;
+      return 1;
+    }
     if(stdout_error) {
       cerr << "Wrong output to stdout." << endl;
       return 1;

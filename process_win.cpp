@@ -188,40 +188,44 @@ int Process::get_exit_status() noexcept {
   if(data.id == 0)
     return -1;
 
-  DWORD exit_status;
-  WaitForSingleObject(data.handle, INFINITE);
-  if(!GetExitCodeProcess(data.handle, &exit_status))
-    exit_status = -1;
-  {
-    std::lock_guard<std::mutex> lock(close_mutex);
-    CloseHandle(data.handle);
-    closed = true;
+  if(data.handle) {
+    DWORD exit_status;
+    WaitForSingleObject(data.handle, INFINITE);
+    if(GetExitCodeProcess(data.handle, &exit_status))
+      data.exit_status = exit_status;
+    {
+      std::lock_guard<std::mutex> lock(close_mutex);
+      CloseHandle(data.handle);
+      data.handle = nullptr;
+      closed = true;
+    }
+    close_fds();
   }
-  close_fds();
-
-  return static_cast<int>(exit_status);
+  return data.exit_status;
 }
 
 bool Process::try_get_exit_status(int &exit_status) noexcept {
   if(data.id == 0)
     return false;
 
-  DWORD wait_status = WaitForSingleObject(data.handle, 0);
+  if(data.handle) {
+    DWORD wait_status = WaitForSingleObject(data.handle, 0);
 
-  if(wait_status == WAIT_TIMEOUT)
-    return false;
+    if(wait_status == WAIT_TIMEOUT)
+      return false;
 
-  DWORD exit_status_win;
-  if(!GetExitCodeProcess(data.handle, &exit_status_win))
-    exit_status_win = -1;
-  {
-    std::lock_guard<std::mutex> lock(close_mutex);
-    CloseHandle(data.handle);
-    closed = true;
+    DWORD exit_status_win = -1;
+    if(GetExitCodeProcess(data.handle, &exit_status_win))
+      data.exit_status = static_cast<int>(exit_status_win);
+    {
+      std::lock_guard<std::mutex> lock(close_mutex);
+      CloseHandle(data.handle);
+      data.handle = nullptr;
+      closed = true;
+    }
+    close_fds();
   }
-  close_fds();
-
-  exit_status = static_cast<int>(exit_status_win);
+  exit_status = data.exit_status;
   return true;
 }
 
