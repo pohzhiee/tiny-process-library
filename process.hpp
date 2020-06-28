@@ -48,7 +48,7 @@ private:
     Data() noexcept;
     id_type id;
 #ifdef _WIN32
-    void *handle{};
+    void *handle{nullptr};
 #endif
     int exit_status{-1};
   };

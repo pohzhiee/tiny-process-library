@@ -8,7 +8,7 @@
 
 namespace TinyProcessLib {
 
-Process::Data::Data() noexcept : id(0), handle(NULL) {}
+Process::Data::Data() noexcept : id(0) {}
 
 // Simple HANDLE wrapper to close it automatically from the destructor.
 class Handle {
@@ -188,19 +188,25 @@ int Process::get_exit_status() noexcept {
   if(data.id == 0)
     return -1;
 
-  if(data.handle) {
-    DWORD exit_status;
-    WaitForSingleObject(data.handle, INFINITE);
-    if(GetExitCodeProcess(data.handle, &exit_status))
-      data.exit_status = exit_status;
-    {
-      std::lock_guard<std::mutex> lock(close_mutex);
-      CloseHandle(data.handle);
-      data.handle = nullptr;
-      closed = true;
-    }
-    close_fds();
+  if(!data.handle)
+    return data.exit_status;
+
+  WaitForSingleObject(data.handle, INFINITE);
+
+  DWORD exit_status;
+  if(!GetExitCodeProcess(data.handle, &exit_status))
+    data.exit_status = -1; // Store exit status for future calls
+  else
+    data.exit_status = static_cast<int>(exit_status); // Store exit status for future calls
+
+  {
+    std::lock_guard<std::mutex> lock(close_mutex);
+    CloseHandle(data.handle);
+    data.handle = nullptr;
+    closed = true;
   }
+  close_fds();
+
   return data.exit_status;
 }
 
@@ -208,24 +214,30 @@ bool Process::try_get_exit_status(int &exit_status) noexcept {
   if(data.id == 0)
     return false;
 
-  if(data.handle) {
-    DWORD wait_status = WaitForSingleObject(data.handle, 0);
-
-    if(wait_status == WAIT_TIMEOUT)
-      return false;
-
-    DWORD exit_status_win = -1;
-    if(GetExitCodeProcess(data.handle, &exit_status_win))
-      data.exit_status = static_cast<int>(exit_status_win);
-    {
-      std::lock_guard<std::mutex> lock(close_mutex);
-      CloseHandle(data.handle);
-      data.handle = nullptr;
-      closed = true;
-    }
-    close_fds();
+  if(!data.handle) {
+    exit_status = data.exit_status;
+    return true;
   }
-  exit_status = data.exit_status;
+
+  DWORD wait_status = WaitForSingleObject(data.handle, 0);
+  if(wait_status == WAIT_TIMEOUT)
+    return false;
+
+  DWORD exit_status_tmp;
+  if(!GetExitCodeProcess(data.handle, &exit_status_tmp))
+    exit_status = -1;
+  else
+    exit_status = static_cast<int>(exit_status_tmp);
+  data.exit_status = exit_status; // Store exit status for future calls
+
+  {
+    std::lock_guard<std::mutex> lock(close_mutex);
+    CloseHandle(data.handle);
+    data.handle = nullptr;
+    closed = true;
+  }
+  close_fds();
+
   return true;
 }
 
