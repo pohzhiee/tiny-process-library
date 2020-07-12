@@ -14,10 +14,15 @@
 namespace TinyProcessLib {
 /// Additional parameters to Process constructors.
 struct Config {
-  /// Values to control how the process is started, mimics STARTUPINFO's wShowWindow on Windows,
-  /// this is only used on Windows.
+  /// Buffer size for reading stdout and stderr. Default is 131072 (128 kB).
+  std::size_t buffer_size = 131072;
+  /// Set to true to inherit file descriptors from parent process. Default is false.
+  /// On Windows: has no effect unless read_stdout==nullptr, read_stderr==nullptr and open_stdin==false.
+  bool inherit_file_descriptors = false;
+
+  /// On Windows only: controls how the process is started, mimics STARTUPINFO's wShowWindow.
   /// See: https://docs.microsoft.com/en-us/windows/desktop/api/processthreadsapi/ns-processthreadsapi-startupinfoa
-  ///  and https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-showwindow
+  /// and https://docs.microsoft.com/en-us/windows/desktop/api/winuser/nf-winuser-showwindow
   enum class ShowWindow {
     hide = 0,
     show_normal = 1,
@@ -33,13 +38,7 @@ struct Config {
     show_default = 10,
     force_minimize = 11
   };
-
-  /// Buffer size for reading stdout and stderr. Default is 131072 (128 kB).
-  std::size_t buffer_size = 131072;
-  /// Set to true to inherit file descriptors from parent process. Default is false.
-  /// On Windows: has no effect unless read_stdout==nullptr, read_stderr==nullptr and open_stdin==false.
-  bool inherit_file_descriptors = false;
-  /// On Windows: control how the window is shown.
+  /// On Windows only: controls how the window is shown.
   ShowWindow show_window{ShowWindow::show_default};
 };
 
