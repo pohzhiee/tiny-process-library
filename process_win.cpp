@@ -101,6 +101,11 @@ Process::id_type Process::open(const string_type &command, const string_type &pa
   if(stdin_fd || stdout_fd || stderr_fd)
     startup_info.dwFlags |= STARTF_USESTDHANDLES;
 
+  if(config.show_window != Config::ShowWindow::SHOWDEFAULT) {
+    startup_info.dwFlags |= STARTF_USESHOWWINDOW;
+    startup_info.wShowWindow = static_cast<WORD>(config.show_window);
+  }
+
   auto process_command = command;
 #ifdef MSYS_PROCESS_USE_SH
   size_t pos = 0;
