@@ -13,11 +13,14 @@ int main() {
   for(size_t ct = 0; ct < 4; ct++) {
     threads.emplace_back([&stdout_error, &exit_status_error, ct]() {
       for(size_t c = 0; c < 1000; c++) {
-        Process process("echo Hello World " + to_string(c) + " " + to_string(ct), "", [&stdout_error, ct, c](const char *bytes, size_t n) {
-          if(string(bytes, n) != "Hello World " + to_string(c) + " " + to_string(ct) + "\n")
-            stdout_error = true;
-        }, [](const char *, size_t) {
-        }, true);
+        Process process(
+            "echo Hello World " + to_string(c) + " " + to_string(ct), "",
+            [&stdout_error, ct, c](const char *bytes, size_t n) {
+              if(string(bytes, n) != "Hello World " + to_string(c) + " " + to_string(ct) + "\n")
+                stdout_error = true;
+            },
+            [](const char *, size_t) {},
+            true);
         auto exit_status = process.get_exit_status();
         if(exit_status != 0)
           exit_status_error = true;

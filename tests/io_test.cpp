@@ -78,12 +78,14 @@ int main() {
   }
 
   {
-    Process process([] {
-      cout << "Test" << endl;
-      exit(0);
-    }, [output](const char *bytes, size_t n) {
-      *output += string(bytes, n);
-    });
+    Process process(
+        [] {
+          cout << "Test" << endl;
+          exit(0);
+        },
+        [output](const char *bytes, size_t n) {
+          *output += string(bytes, n);
+        });
     assert(process.get_exit_status() == 0);
     assert(output->substr(0, 4) == "Test");
     output->clear();
@@ -100,11 +102,14 @@ int main() {
   }
 
   {
-    Process process("echo Test && ls an_incorrect_path", "", [output](const char *bytes, size_t n) {
-      *output += string(bytes, n);
-    }, [error](const char *bytes, size_t n) {
-      *error += string(bytes, n);
-    });
+    Process process(
+        "echo Test && ls an_incorrect_path", "",
+        [output](const char *bytes, size_t n) {
+          *output += string(bytes, n);
+        },
+        [error](const char *bytes, size_t n) {
+          *error += string(bytes, n);
+        });
     assert(process.get_exit_status() > 0);
     assert(output->substr(0, 4) == "Test");
     assert(!error->empty());
@@ -113,9 +118,12 @@ int main() {
   }
 
   {
-    Process process("bash", "", [output](const char *bytes, size_t n) {
-      *output += string(bytes, n);
-    }, nullptr, true);
+    Process process(
+        "bash", "",
+        [output](const char *bytes, size_t n) {
+          *output += string(bytes, n);
+        },
+        nullptr, true);
     process.write("echo Test\n");
     process.write("exit\n");
     assert(process.get_exit_status() == 0);
@@ -124,9 +132,12 @@ int main() {
   }
 
   {
-    Process process("cat", "", [output](const char *bytes, size_t n) {
-      *output += string(bytes, n);
-    }, nullptr, true);
+    Process process(
+        "cat", "",
+        [output](const char *bytes, size_t n) {
+          *output += string(bytes, n);
+        },
+        nullptr, true);
     process.write("Test\n");
     process.close_stdin();
     assert(process.get_exit_status() == 0);
