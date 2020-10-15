@@ -366,4 +366,11 @@ void Process::kill(id_type id, bool force) noexcept {
     ::kill(-id, SIGINT);
 }
 
+void Process::signal(int signum) noexcept {
+  std::lock_guard<std::mutex> lock(close_mutex);
+  if(data.id > 0 && !closed) {
+    ::kill(-data.id, signum);
+  }
+}
+
 } // namespace TinyProcessLib
