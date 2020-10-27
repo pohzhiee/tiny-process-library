@@ -9,6 +9,7 @@ else()
 endif()
 
 add_library(tiny-process-library process.cpp)
+add_library(tiny-process-library::tiny-process-library ALIAS tiny-process-library)
 
 if(MSVC)
   target_compile_definitions(tiny-process-library PRIVATE /D_CRT_SECURE_NO_WARNINGS)
@@ -29,7 +30,8 @@ endif()
 find_package(Threads REQUIRED)
 
 target_link_libraries(tiny-process-library ${CMAKE_THREAD_LIBS_INIT})
-target_include_directories(tiny-process-library PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(tiny-process-library PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                                                       $<INSTALL_INTERFACE:include>)
 
 # if tiny-process-library is not a sub-project:
 if(CMAKE_SOURCE_DIR STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
@@ -42,7 +44,14 @@ if(CMAKE_SOURCE_DIR STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   add_executable(examples examples.cpp)
   target_link_libraries(examples tiny-process-library)
   
-  install(TARGETS tiny-process-library DESTINATION lib)
+  install(TARGETS tiny-process-library EXPORT ${PROJECT_NAME}-config DESTINATION lib)
+
+  install(EXPORT ${PROJECT_NAME}-config
+    FILE ${PROJECT_NAME}-config.cmake
+    NAMESPACE ${PROJECT_NAME}::
+    DESTINATION lib/cmake/{PROJECT_NAME}
+  )
+
   install(FILES process.hpp DESTINATION include)
 endif()
 
