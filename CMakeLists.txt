@@ -49,7 +49,7 @@ if(CMAKE_SOURCE_DIR STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
   install(EXPORT ${PROJECT_NAME}-config
     FILE ${PROJECT_NAME}-config.cmake
     NAMESPACE ${PROJECT_NAME}::
-    DESTINATION lib/cmake/{PROJECT_NAME}
+    DESTINATION lib/cmake/${PROJECT_NAME}
   )
 
   install(FILES process.hpp DESTINATION include)
